@@ -1,5 +1,9 @@
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using JKFrame;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace 后台线程计算
 {
@@ -14,6 +18,7 @@ namespace 后台线程计算
         public Transform[,] array;
         Transform cubeParent;
 
+        Task<(List<AStarNode>, List<AStarNode>)?> pathTask;
         void Start()
         {
             cubeParent = new GameObject("CubeParent").transform;
@@ -42,7 +47,7 @@ namespace 后台线程计算
                 RaycastHit hit;
                 if (Physics.Raycast(ray, out hit))
                 {
-                    if (start == null)
+                    if (start == null && end == null)
                     {
                         foreach (var node in AstarManager.Instance.nodeArray)
                         {
@@ -57,7 +62,7 @@ namespace 后台线程计算
                         }
 
                         start = hit.transform;
-                        start.GetComponent<Renderer>().material.color = Color.green;
+                        start.GetComponent<Renderer>().material.color = Color.yellow;
                     }
                     else
                     {
@@ -70,13 +75,45 @@ namespace 后台线程计算
                         }
 
                         end.GetComponent<Renderer>().material.color = Color.blue;
-                        //异步方法，使用工作线程
-                        AstarManager.Instance.FindPathAsync(start.position, end.position, array);
+                        ExecutePathTaskAsync();
 
-                        start = null;
+
                     }
                 }
             }
+        }
+
+        //执行寻路任务
+        async void ExecutePathTaskAsync()
+        {
+            //开始计时
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            //异步方法，使用工作线程
+            pathTask = AstarManager.Instance.FindPathAsync(start.position, end.position);
+            //获取寻路结果
+            await pathTask;
+            if (pathTask.Result.HasValue)
+            {
+                List<AStarNode> pathList = pathTask.Result.Value.Item1;
+                List<AStarNode> visited = pathTask.Result.Value.Item2;
+
+                foreach (var node in visited)
+                {
+                    array[node.x, node.y].GetComponent<Renderer>().material.color = Color.black;
+                }
+
+                foreach (var node in pathList)
+                {
+                    array[node.x, node.y].GetComponent<Renderer>().material.color = Color.green;
+                }
+                //计算时间
+                stopwatch.Stop();
+                Debug.Log($"同步寻路耗时: {stopwatch.ElapsedMilliseconds} ms");
+            }
+
+            start = null;
+            end = null;
         }
     }
 }

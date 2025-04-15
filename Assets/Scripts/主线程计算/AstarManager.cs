@@ -55,7 +55,7 @@ namespace 主线程计算
                 for (int j = 0; j < height; j++)
                 {
                     AStarNode node = new AStarNode(i, j,
-                        Random.Range(0, 100) < 30 ? AStarNodeType.Stop : AStarNodeType.Walk);
+                        Random.Range(0, 100) < 50 ? AStarNodeType.Stop : AStarNodeType.Walk);
                     nodeArray[i, j] = node;
                 }
             }

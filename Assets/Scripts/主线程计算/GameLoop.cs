@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using JKFrame;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace 主线程计算
 {
@@ -83,8 +85,12 @@ namespace 主线程计算
 
                         end.GetComponent<Renderer>().material.color = Color.blue;
 
+                        //计算寻路消耗时间
+                        Stopwatch stopwatch = new Stopwatch();
+                        stopwatch.Start();
                         pathList = AstarManager.Instance.FindPath(start.position, end.position);
-
+                        stopwatch.Stop();
+                        Debug.Log($"同步寻路耗时: {stopwatch.ElapsedMilliseconds} ms");
 
                         if (pathList == null)
                         {

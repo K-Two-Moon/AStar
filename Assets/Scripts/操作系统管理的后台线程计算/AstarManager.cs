@@ -64,13 +64,13 @@ namespace 后台线程计算
                 for (int j = 0; j < height; j++)
                 {
                     AStarNode node = new AStarNode(i, j,
-                        Random.Range(0, 100) < 40 ? AStarNodeType.Stop : AStarNodeType.Walk);
+                        Random.Range(0, 100) < 50 ? AStarNodeType.Stop : AStarNodeType.Walk);
                     nodeArray[i, j] = node;
                 }
             }
         }
 
-        async public void FindPathAsync(Vector3 startPos, Vector3 endPos, Transform[,] array)
+        async public Task<(List<AStarNode>, List<AStarNode>)?> FindPathAsync(Vector3 startPos, Vector3 endPos)
         {
             // int count = 0;
             //首先要判断 传入的坐标是否合法
@@ -87,7 +87,7 @@ namespace 后台线程计算
                            || endX >= mapWidth || endY >= mapHeight)
             {
                 Debug.Log("传入的坐标不合法,超出地图范围");
-                return;
+                return null;
             }
 
             //如果没有超出获取对应的节点
@@ -100,7 +100,7 @@ namespace 后台线程计算
             if (startNode.type == AStarNodeType.Stop || endNode.type == AStarNodeType.Stop)
             {
                 Debug.Log("传入的坐标不合法,起点或者终点是阻挡地图");
-                return;
+                return null;
             }
 
 
@@ -186,24 +186,7 @@ namespace 后台线程计算
             });
 
 
-            //把最查找过的格子进行变色
-            foreach (var node in visited)
-            {
-                int x = node.x;
-                int y = node.y;
-
-                array[x, y].GetComponent<Renderer>().material.color = Color.black;
-            }
-
-            //把最终路径进行变色
-            foreach (var node in pathList)
-            {
-                int x = node.x;
-                int y = node.y;
-
-                array[x, y].GetComponent<Renderer>().material.color = Color.yellow;
-            }
-
+            return (pathList, visited);
         }
 
 
