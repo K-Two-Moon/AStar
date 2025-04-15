@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using JKFrame;
 using UnityEngine;
 
@@ -6,30 +5,34 @@ namespace 后台线程计算
 {
     public class GameLoop : SingletonMono<GameLoop>
     {
-        [Range(1, 100)] [Header("地图大小")] [SerializeField]
+        [Range(1, 100)]
+        [Header("地图大小")]
+        [SerializeField]
         int width, height;
 
         Transform start, end;
         public Transform[,] array;
-
+        Transform cubeParent;
 
         void Start()
         {
+            cubeParent = new GameObject("CubeParent").transform;
+            cubeParent.position = Vector3.zero;
+
             array = new Transform[width, height];
-            主线程计算.AstarManager.Instance.Initialize(width, height);
-            foreach (var node in 主线程计算.AstarManager.Instance.nodeArray)
+            AstarManager.Instance.Initialize(width, height);
+            foreach (var node in AstarManager.Instance.nodeArray)
             {
                 Transform cube = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
+                cube.SetParent(cubeParent);
                 cube.position = new Vector3(node.x, node.y, 0);
                 array[node.x, node.y] = cube;
-                if (node.type == 主线程计算.AStarNodeType.Stop)
+                if (node.type == AStarNodeType.Stop)
                 {
                     cube.GetComponent<Renderer>().material.color = Color.red;
                 }
             }
         }
-
-        List<AStarNode> pathList;
 
         void Update()
         {
@@ -41,9 +44,9 @@ namespace 后台线程计算
                 {
                     if (start == null)
                     {
-                        foreach (var node in 主线程计算.AstarManager.Instance.nodeArray)
+                        foreach (var node in AstarManager.Instance.nodeArray)
                         {
-                            if (node.type == 主线程计算.AStarNodeType.Walk)
+                            if (node.type == AStarNodeType.Walk)
                             {
                                 array[node.x, node.y].GetComponent<Renderer>().material.color = Color.white;
                             }
@@ -55,15 +58,6 @@ namespace 后台线程计算
 
                         start = hit.transform;
                         start.GetComponent<Renderer>().material.color = Color.green;
-
-                        if (pathList != null)
-                        {
-                            foreach (var node in pathList)
-                            {
-                                Transform cube = array[node.x, node.y];
-                                cube.GetComponent<Renderer>().material.color = Color.white;
-                            }
-                        }
                     }
                     else
                     {
@@ -71,27 +65,13 @@ namespace 后台线程计算
                         if (start == end)
                         {
                             end = null;
-                            JKLog.Warning("起点和终点不能相同");
+                            Debug.Log("起点和终点不能相同");
                             return;
                         }
 
                         end.GetComponent<Renderer>().material.color = Color.blue;
-
-                        pathList = AstarManager.Instance.FindPath(start.position, end.position);
-
-
-                        if (pathList == null)
-                        {
-                            Debug.Log("路径不存在");
-                            start = null;
-                            return;
-                        }
-
-                        foreach (var node in pathList)
-                        {
-                            Transform cube = array[node.x, node.y];
-                            cube.GetComponent<Renderer>().material.color = Color.yellow;
-                        }
+                        //异步方法，使用工作线程
+                        AstarManager.Instance.FindPathAsync(start.position, end.position, array);
 
                         start = null;
                     }

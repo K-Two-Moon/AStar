@@ -206,7 +206,7 @@ namespace 主线程计算
                 return;
             }
 
-            //GameLoop.Instance.array[x, y].GetComponent<Renderer>().material.color = Color.black;
+            GameLoop.Instance.array[x, y].GetComponent<Renderer>().material.color = Color.black;
             openList.Add(node);
         }
     }

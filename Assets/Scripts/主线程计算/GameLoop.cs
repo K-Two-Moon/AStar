@@ -6,20 +6,26 @@ namespace 主线程计算
 {
     public class GameLoop : SingletonMono<GameLoop>
     {
-        [Range(1, 100)] [Header("地图大小")] [SerializeField]
+        [Range(1, 100)]
+        [Header("地图大小")]
+        [SerializeField]
         int width, height;
 
         Transform start, end;
         public Transform[,] array;
 
-
+        Transform cubeParent;
         void Start()
         {
+            cubeParent = new GameObject("CubeParent").transform;
+            cubeParent.position = Vector3.zero;
+
             array = new Transform[width, height];
             AstarManager.Instance.Initialize(width, height);
             foreach (var node in AstarManager.Instance.nodeArray)
             {
                 Transform cube = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
+                cube.SetParent(cubeParent);
                 cube.position = new Vector3(node.x, node.y, 0);
                 array[node.x, node.y] = cube;
                 if (node.type == AStarNodeType.Stop)

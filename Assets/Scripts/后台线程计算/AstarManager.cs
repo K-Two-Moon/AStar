@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using JKFrame;
 using UnityEngine;
 
@@ -6,8 +7,6 @@ namespace 后台线程计算
 {
     public class AstarManager : Singleton<AstarManager>
     {
-        int countMax = 1000;
-
         /// <summary>
         /// 节点的边长
         /// </summary>
@@ -39,6 +38,16 @@ namespace 后台线程计算
         List<AStarNode> closeList = new List<AStarNode>();
 
         /// <summary>
+        /// 对查找过的格子进行变色
+        /// 直观查看寻路消耗
+        /// </summary>
+        List<AStarNode> visited = new List<AStarNode>(10000);
+        /// <summary>
+        /// 最终路径的列表
+        /// </summary>
+        List<AStarNode> pathList = new List<AStarNode>(10000);
+
+        /// <summary>
         /// 初始化地图信息
         /// </summary>
         /// <param name="width">宽度</param>
@@ -55,13 +64,13 @@ namespace 后台线程计算
                 for (int j = 0; j < height; j++)
                 {
                     AStarNode node = new AStarNode(i, j,
-                        Random.Range(0, 100) < 30 ? AStarNodeType.Stop : AStarNodeType.Walk);
+                        Random.Range(0, 100) < 40 ? AStarNodeType.Stop : AStarNodeType.Walk);
                     nodeArray[i, j] = node;
                 }
             }
         }
 
-        public List<AStarNode> FindPath(Vector3 startPos, Vector3 endPos)
+        async public void FindPathAsync(Vector3 startPos, Vector3 endPos, Transform[,] array)
         {
             // int count = 0;
             //首先要判断 传入的坐标是否合法
@@ -78,7 +87,7 @@ namespace 后台线程计算
                            || endX >= mapWidth || endY >= mapHeight)
             {
                 Debug.Log("传入的坐标不合法,超出地图范围");
-                return null;
+                return;
             }
 
             //如果没有超出获取对应的节点
@@ -91,7 +100,7 @@ namespace 后台线程计算
             if (startNode.type == AStarNodeType.Stop || endNode.type == AStarNodeType.Stop)
             {
                 Debug.Log("传入的坐标不合法,起点或者终点是阻挡地图");
-                return null;
+                return;
             }
 
 
@@ -99,6 +108,8 @@ namespace 后台线程计算
             //清空开启列表和关闭列表
             openList.Clear();
             closeList.Clear();
+            pathList.Clear();
+            visited.Clear();
 
             //把开始点放入关闭列表
             startNode.father = null;
@@ -107,49 +118,55 @@ namespace 后台线程计算
             closeList.Add(startNode);
 
 
-            do
+
+
+            await Task.Run(() =>
             {
-                //从起点开始 找周围的点 并放入开启列表中
-                for (int x = -1; x <= 1; x++)
+                do
                 {
-                    for (int y = -1; y <= 1; y++)
+                    //从起点开始 找周围的点 并放入开启列表中
+                    for (int x = -1; x <= 1; x++)
                     {
-                        // 排除自身
-                        if (x == 0 && y == 0)
-                            continue;
+                        for (int y = -1; y <= 1; y++)
+                        {
+                            // 排除自身
+                            if (x == 0 && y == 0)
+                                continue;
 
-                        int checkX = startNode.x + x;
-                        int checkY = startNode.y + y;
+                            int checkX = startNode.x + x;
+                            int checkY = startNode.y + y;
 
 
-                        FindNearlyNodeToOpenList(checkX, checkY, 1, startNode, endNode);
+                            FindNearlyNodeToOpenList(checkX, checkY, 1, startNode, endNode);
+                        }
                     }
-                }
-                //判断这些点 是否是边界 是否是阻挡 是否在开启或者关闭列表 如果都不是 才放入开启列表
+                    //判断这些点 是否是边界 是否是阻挡 是否在开启或者关闭列表 如果都不是 才放入开启列表
+
+                    //选出开启列表中 寻路消耗最小的点
+                    openList.Sort((a, b) => a.F.CompareTo(b.F));
+
+                    if (openList.Count == 0)
+                    {
+                        break;
+                    }
+                    //把寻路消耗最小的点放入关闭列表中 
+                    closeList.Add(openList[0]);
+
+                    //找得这个点 又变成新的起点 进行下一次寻路计算了
+                    startNode = openList[0];
+                    //然后再从开启列表中移除
+                    openList.RemoveAt(0);
 
 
-                //选出开启列表中 寻路消耗最小的点
-                openList.Sort((a, b) => a.F.CompareTo(b.F));
-
-                //把寻路消耗最小的点放入关闭列表中 
-
-                closeList.Add(openList[0]);
-                //找得这个点 又变成新的起点 进行下一次寻路计算了
-                startNode = openList[0];
-                //然后再从开启列表中移除
-                openList.RemoveAt(0);
-
+                } while (openList.Count > 0 && startNode != endNode);
 
                 //如果这个点已经是终点了 那么得到最终结果返回出去
                 //如果这个点 不是终点 那么继续寻路
+
                 if (startNode == endNode)
                 {
                     //找完了
-                    List<AStarNode> pathList = new List<AStarNode>
-                    {
-                        endNode
-                    };
-
+                    pathList.Add(endNode);
                     while (endNode.father != null)
                     {
                         pathList.Add(endNode.father);
@@ -158,14 +175,38 @@ namespace 后台线程计算
 
                     //反转一下顺序
                     pathList.Reverse();
-                    return pathList;
                 }
-            } while (openList.Count > 0);
 
-            //如果开启列表为空 说明没有找到路径
-            Debug.Log("没有找到路径");
-            return null;
+                //如果开启列表为空 说明没有找到路径
+                if (openList.Count == 0)
+                {
+                    Debug.Log("没有找到路径");
+
+                }
+            });
+
+
+            //把最查找过的格子进行变色
+            foreach (var node in visited)
+            {
+                int x = node.x;
+                int y = node.y;
+
+                array[x, y].GetComponent<Renderer>().material.color = Color.black;
+            }
+
+            //把最终路径进行变色
+            foreach (var node in pathList)
+            {
+                int x = node.x;
+                int y = node.y;
+
+                array[x, y].GetComponent<Renderer>().material.color = Color.yellow;
+            }
+
         }
+
+
 
         /// <summary>
         /// 把周围的点放入开启列表中
@@ -206,7 +247,7 @@ namespace 后台线程计算
                 return;
             }
 
-            //GameLoop.Instance.array[x, y].GetComponent<Renderer>().material.color = Color.black;
+            visited.Add(node);
             openList.Add(node);
         }
     }
