@@ -143,19 +143,19 @@ namespace 后台线程计算
                     //判断这些点 是否是边界 是否是阻挡 是否在开启或者关闭列表 如果都不是 才放入开启列表
 
                     //选出开启列表中 寻路消耗最小的点
-                    openList.Sort((a, b) => a.F.CompareTo(b.F));
+                    openList.Sort((a, b) => b.F.CompareTo(a.F));
 
                     if (openList.Count == 0)
                     {
                         break;
                     }
                     //把寻路消耗最小的点放入关闭列表中 
-                    closeList.Add(openList[0]);
+                    closeList.Add(openList[openList.Count - 1]);
 
                     //找得这个点 又变成新的起点 进行下一次寻路计算了
-                    startNode = openList[0];
+                    startNode = openList[openList.Count - 1];
                     //然后再从开启列表中移除
-                    openList.RemoveAt(0);
+                    openList.RemoveAt(openList.Count - 1);
 
 
                 } while (openList.Count > 0 && startNode != endNode);
