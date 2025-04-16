@@ -4,7 +4,7 @@ using Unity.Collections;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace Job系统进行计算_同步计算为方便查看性能
+namespace Job系统进行计算
 {
     public class GameLoop : SingletonMono<GameLoop>
     {
