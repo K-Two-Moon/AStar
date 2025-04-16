@@ -25,8 +25,8 @@ namespace 后台线程计算
             cubeParent.position = Vector3.zero;
 
             array = new Transform[width, height];
-            AstarManager.Instance.Initialize(width, height);
-            foreach (var node in AstarManager.Instance.nodeArray)
+            AStarManager.Instance.Initialize(width, height);
+            foreach (var node in AStarManager.Instance.nodeArray)
             {
                 Transform cube = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
                 cube.SetParent(cubeParent);
@@ -49,7 +49,7 @@ namespace 后台线程计算
                 {
                     if (start == null && end == null)
                     {
-                        foreach (var node in AstarManager.Instance.nodeArray)
+                        foreach (var node in AStarManager.Instance.nodeArray)
                         {
                             if (node.type == AStarNodeType.Walk)
                             {
@@ -90,7 +90,7 @@ namespace 后台线程计算
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             //异步方法，使用工作线程
-            pathTask = AstarManager.Instance.FindPathAsync(start.position, end.position);
+            pathTask = AStarManager.Instance.FindPathAsync(start.position, end.position);
             //获取寻路结果
             await pathTask;
             if (pathTask.Result.HasValue)

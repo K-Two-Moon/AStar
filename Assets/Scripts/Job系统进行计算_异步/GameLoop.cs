@@ -27,8 +27,8 @@ namespace Job系统进行计算_异步
             cubeParent.position = Vector3.zero;
 
             array = new Transform[width, height];
-            AstarManager.Instance.Initialize(width, height);
-            foreach (var node in AstarManager.Instance.nodeArrayNative)
+            AStarManager.Instance.Initialize(width, height);
+            foreach (var node in AStarManager.Instance.nodeArrayNative)
             {
                 Transform cube = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
                 cube.SetParent(cubeParent);
@@ -51,7 +51,7 @@ namespace Job系统进行计算_异步
                 {
                     if (start == null && end == null)
                     {
-                        foreach (var node in AstarManager.Instance.nodeArrayNative)
+                        foreach (var node in AStarManager.Instance.nodeArrayNative)
                         {
                             if (node.type == AStarNodeType.Walk)
                             {
@@ -92,7 +92,7 @@ namespace Job系统进行计算_异步
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             //异步方法，使用工作线程
-            jobHandle = AstarManager.Instance.FindPathAsync(start.position, end.position);
+            jobHandle = AStarManager.Instance.FindPathAsync(start.position, end.position);
 
             if (jobHandle != null)
             {
@@ -100,10 +100,10 @@ namespace Job系统进行计算_异步
                 //即使 handle.IsCompleted == true，你依然 必须手动调用 handle.Complete()，
                 // 否则 Unity 不会清除它的内存安全锁（SafetyHandle），你访问 NativeList/NativeArray 会依旧抛错。
                 jobHandle.Value.Complete();
-                NativeList<int> pathList = AstarManager.Instance.pathList;
-                NativeList<int> visited = AstarManager.Instance.visited;
+                NativeList<int> pathList = AStarManager.Instance.pathList;
+                NativeList<int> visited = AStarManager.Instance.visited;
 
-                NativeArray<AStarNode> nodeArrayNative = AstarManager.Instance.nodeArrayNative;
+                NativeArray<AStarNode> nodeArrayNative = AStarManager.Instance.nodeArrayNative;
                 foreach (var node in visited)
                 {
                     int x = nodeArrayNative[node].x;
@@ -131,7 +131,7 @@ namespace Job系统进行计算_异步
 
         void OnDestroy()
         {
-            AstarManager.Instance.Destroy();
+            AStarManager.Instance.Destroy();
         }
     }
 }

@@ -24,8 +24,8 @@ namespace Job系统进行计算
             cubeParent.position = Vector3.zero;
 
             array = new Transform[width, height];
-            AstarManager.Instance.Initialize(width, height);
-            foreach (var node in AstarManager.Instance.nodeArrayNative)
+            AStarManager.Instance.Initialize(width, height);
+            foreach (var node in AStarManager.Instance.nodeArrayNative)
             {
                 Transform cube = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
                 cube.SetParent(cubeParent);
@@ -48,7 +48,7 @@ namespace Job系统进行计算
                 {
                     if (start == null && end == null)
                     {
-                        foreach (var node in AstarManager.Instance.nodeArrayNative)
+                        foreach (var node in AStarManager.Instance.nodeArrayNative)
                         {
                             if (node.type == AStarNodeType.Walk)
                             {
@@ -89,7 +89,7 @@ namespace Job系统进行计算
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             //异步方法，使用工作线程
-            (NativeList<int>, NativeList<int>)? pathTask = AstarManager.Instance.FindPathAsync(start.position, end.position);
+            (NativeList<int>, NativeList<int>)? pathTask = AStarManager.Instance.FindPathAsync(start.position, end.position);
             //获取寻路结果
 
             if (pathTask.HasValue)
@@ -97,7 +97,7 @@ namespace Job系统进行计算
                 NativeList<int> pathList = pathTask.Value.Item1;
                 NativeList<int> visited = pathTask.Value.Item2;
 
-                NativeArray<AStarNode> nodeArrayNative = AstarManager.Instance.nodeArrayNative;
+                NativeArray<AStarNode> nodeArrayNative = AStarManager.Instance.nodeArrayNative;
                 foreach (var node in visited)
                 {
                     int x = nodeArrayNative[node].x;
@@ -124,7 +124,7 @@ namespace Job系统进行计算
 
         void OnDestroy()
         {
-            AstarManager.Instance.Destroy();
+            AStarManager.Instance.Destroy();
         }
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace 后台线程计算
 {
-    public class AstarManager : Singleton<AstarManager>
+    public class AStarManager : Singleton<AStarManager>
     {
         /// <summary>
         /// 节点的边长

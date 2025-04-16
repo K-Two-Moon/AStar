@@ -10,7 +10,7 @@ using Debug = UnityEngine.Debug;
 namespace Job系统进行计算
 {
     [BurstCompile]
-    public class AstarManager : Singleton<AstarManager>
+    public class AStarManager : Singleton<AStarManager>
     {
         /// <summary>
         /// 节点的边长

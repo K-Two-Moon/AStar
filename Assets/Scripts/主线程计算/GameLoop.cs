@@ -23,8 +23,8 @@ namespace 主线程计算
             cubeParent.position = Vector3.zero;
 
             array = new Transform[width, height];
-            AstarManager.Instance.Initialize(width, height);
-            foreach (var node in AstarManager.Instance.nodeArray)
+            AStarManager.Instance.Initialize(width, height);
+            foreach (var node in AStarManager.Instance.nodeArray)
             {
                 Transform cube = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
                 cube.SetParent(cubeParent);
@@ -49,7 +49,7 @@ namespace 主线程计算
                 {
                     if (start == null)
                     {
-                        foreach (var node in AstarManager.Instance.nodeArray)
+                        foreach (var node in AStarManager.Instance.nodeArray)
                         {
                             if (node.type == AStarNodeType.Walk)
                             {
@@ -88,11 +88,11 @@ namespace 主线程计算
                         //计算寻路消耗时间
                         Stopwatch stopwatch = new Stopwatch();
                         stopwatch.Start();
-                        pathList = AstarManager.Instance.FindPath(start.position, end.position);
+                        pathList = AStarManager.Instance.FindPath(start.position, end.position);
                         stopwatch.Stop();
                         Debug.Log($"同步寻路耗时: {stopwatch.ElapsedMilliseconds} ms");
-                        Debug.Log($"遍历节点数: {AstarManager.Instance.traversedNodeCount}");
-                        Debug.Log($"性能指数: {stopwatch.ElapsedMilliseconds * 10000 / AstarManager.Instance.traversedNodeCount} ,值越小性能越高");
+                        Debug.Log($"遍历节点数: {AStarManager.Instance.traversedNodeCount}");
+                        Debug.Log($"性能指数: {stopwatch.ElapsedMilliseconds * 10000 / AStarManager.Instance.traversedNodeCount} ,值越小性能越高");
 
                         if (pathList == null)
                         {

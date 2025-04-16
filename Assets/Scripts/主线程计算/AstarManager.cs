@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace 主线程计算
 {
-    public class AstarManager : Singleton<AstarManager>
+    public class AStarManager : Singleton<AStarManager>
     {
         /// <summary>
         /// 遍历过的节点数量
