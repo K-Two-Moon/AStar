@@ -137,7 +137,14 @@ namespace 后台线程计算
                             int checkY = startNode.y + y;
 
 
-                            FindNearlyNodeToOpenList(checkX, checkY, 1, startNode, endNode);
+                            if (x == 0 || y == 0)
+                            {
+                                FindNearlyNodeToOpenList(checkX, checkY, 1, startNode, endNode);
+                            }
+                            else
+                            {
+                                FindNearlyNodeToOpenList(checkX, checkY, 1.4f, startNode, endNode);
+                            }
                         }
                     }
                     //判断这些点 是否是边界 是否是阻挡 是否在开启或者关闭列表 如果都不是 才放入开启列表

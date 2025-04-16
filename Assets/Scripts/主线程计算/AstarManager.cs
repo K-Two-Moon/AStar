@@ -6,8 +6,10 @@ namespace 主线程计算
 {
     public class AstarManager : Singleton<AstarManager>
     {
-        int countMax = 1000;
-
+        /// <summary>
+        /// 遍历过的节点数量
+        /// </summary>
+        public int traversedNodeCount = 0;
         /// <summary>
         /// 节点的边长
         /// </summary>
@@ -99,6 +101,7 @@ namespace 主线程计算
             //清空开启列表和关闭列表
             openList.Clear();
             closeList.Clear();
+            traversedNodeCount = 0;
 
             //把开始点放入关闭列表
             startNode.father = null;
@@ -121,8 +124,14 @@ namespace 主线程计算
                         int checkX = startNode.x + x;
                         int checkY = startNode.y + y;
 
-
-                        FindNearlyNodeToOpenList(checkX, checkY, 1, startNode, endNode);
+                        if (x == 0 || y == 0)
+                        {
+                            FindNearlyNodeToOpenList(checkX, checkY, 1, startNode, endNode);
+                        }
+                        else
+                        {
+                            FindNearlyNodeToOpenList(checkX, checkY, 1.4f, startNode, endNode);
+                        }
                     }
                 }
                 //判断这些点 是否是边界 是否是阻挡 是否在开启或者关闭列表 如果都不是 才放入开启列表
@@ -157,7 +166,7 @@ namespace 主线程计算
                     }
 
                     //反转一下顺序
-                    pathList.Reverse();
+                    //pathList.Reverse();   测试性能不进行反转
                     return pathList;
                 }
             } while (openList.Count > 0);
@@ -206,6 +215,7 @@ namespace 主线程计算
                 return;
             }
 
+            traversedNodeCount++;
             GameLoop.Instance.array[x, y].GetComponent<Renderer>().material.color = Color.black;
             openList.Add(node);
         }

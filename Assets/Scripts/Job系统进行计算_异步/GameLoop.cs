@@ -1,11 +1,12 @@
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using JKFrame;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 using Debug = UnityEngine.Debug;
 
-namespace 后台线程计算
+namespace Job系统进行计算_异步
 {
     public class GameLoop : SingletonMono<GameLoop>
     {
@@ -18,7 +19,8 @@ namespace 后台线程计算
         public Transform[,] array;
         Transform cubeParent;
 
-        Task<(List<AStarNode>, List<AStarNode>)?> pathTask;
+        //作业句柄
+        JobHandle? jobHandle;
         void Start()
         {
             cubeParent = new GameObject("CubeParent").transform;
@@ -26,7 +28,7 @@ namespace 后台线程计算
 
             array = new Transform[width, height];
             AstarManager.Instance.Initialize(width, height);
-            foreach (var node in AstarManager.Instance.nodeArray)
+            foreach (var node in AstarManager.Instance.nodeArrayNative)
             {
                 Transform cube = GameObject.CreatePrimitive(PrimitiveType.Cube).transform;
                 cube.SetParent(cubeParent);
@@ -49,7 +51,7 @@ namespace 后台线程计算
                 {
                     if (start == null && end == null)
                     {
-                        foreach (var node in AstarManager.Instance.nodeArray)
+                        foreach (var node in AstarManager.Instance.nodeArrayNative)
                         {
                             if (node.type == AStarNodeType.Walk)
                             {
@@ -90,32 +92,47 @@ namespace 后台线程计算
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             //异步方法，使用工作线程
-            pathTask = AstarManager.Instance.FindPathAsync(start.position, end.position);
-            //获取寻路结果
-            await pathTask;
-            if (pathTask.Result.HasValue)
-            {
-                List<AStarNode> pathList = pathTask.Result.Value.Item1;
-                List<AStarNode> visited = pathTask.Result.Value.Item2;
+            jobHandle = AstarManager.Instance.FindPathAsync(start.position, end.position);
 
+            if (jobHandle != null)
+            {
+                await UniTask.WaitUntil(() => jobHandle.Value.IsCompleted);
+                //即使 handle.IsCompleted == true，你依然 必须手动调用 handle.Complete()，
+                // 否则 Unity 不会清除它的内存安全锁（SafetyHandle），你访问 NativeList/NativeArray 会依旧抛错。
+                jobHandle.Value.Complete();
+                NativeList<int> pathList = AstarManager.Instance.pathList;
+                NativeList<int> visited = AstarManager.Instance.visited;
+
+                NativeArray<AStarNode> nodeArrayNative = AstarManager.Instance.nodeArrayNative;
                 foreach (var node in visited)
                 {
-                    array[node.x, node.y].GetComponent<Renderer>().material.color = Color.black;
+                    int x = nodeArrayNative[node].x;
+                    int y = nodeArrayNative[node].y;
+                    array[x, y].GetComponent<Renderer>().material.color = Color.black;
                 }
 
                 foreach (var node in pathList)
                 {
-                    array[node.x, node.y].GetComponent<Renderer>().material.color = Color.green;
+                    int x = nodeArrayNative[node].x;
+                    int y = nodeArrayNative[node].y;
+                    array[x, y].GetComponent<Renderer>().material.color = Color.green;
                 }
                 //计算时间
                 stopwatch.Stop();
                 Debug.Log($"同步寻路耗时: {stopwatch.ElapsedMilliseconds} ms");
-                Debug.Log($"遍历节点数: {pathTask.Result.Value.Item2.Count}");
-                Debug.Log($"性能指数: {stopwatch.ElapsedMilliseconds * 10000 / pathTask.Result.Value.Item2.Count} ,值越小性能越高");
+                Debug.Log($"遍历节点数: {visited.Length}");
+                Debug.Log($"性能指数: {stopwatch.ElapsedMilliseconds * 10000 / visited.Length} ,值越小性能越高");
             }
+            //获取寻路结果
 
             start = null;
             end = null;
         }
+
+        void OnDestroy()
+        {
+            AstarManager.Instance.Destroy();
+        }
     }
 }
+

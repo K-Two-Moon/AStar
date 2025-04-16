@@ -2,7 +2,10 @@
     "name": "AStar",
     "rootNamespace": "",
     "references": [
-        "GUID:7cb2814e6655d904f952bf240b160d11"
+        "GUID:7cb2814e6655d904f952bf240b160d11",
+        "GUID:e0cd26848372d4e5c891c569017e11f1",
+        "GUID:2665a8d13d1b3f18800f46e256720795",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
