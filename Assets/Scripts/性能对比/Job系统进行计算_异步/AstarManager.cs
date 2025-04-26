@@ -3,6 +3,7 @@ using JKFrame;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Profiling;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
@@ -191,78 +192,85 @@ namespace Job系统进行计算_异步
             [BurstCompile]
             public void Execute()
             {
-                AStarNode endNode = nodeArray[endNodeIndex];
-                do
+                ProfilerMarker marker = new ProfilerMarker("MyJob.Execute");
+                using (marker.Auto())
                 {
-                    //从起点开始 找周围的点 并放入开启列表中
-                    for (int x = -1; x <= 1; x++)
+                    // Job内部逻辑
+
+                    AStarNode endNode = nodeArray[endNodeIndex];
+                    do
                     {
-                        for (int y = -1; y <= 1; y++)
+                        //从起点开始 找周围的点 并放入开启列表中
+                        for (int x = -1; x <= 1; x++)
                         {
-                            // 排除自身
-                            if (x + y * mapWidth == startNodeIndex) continue;
-                            AStarNode startNode = nodeArray[startNodeIndex];
-                            int checkX = startNode.x + x;
-                            int checkY = startNode.y + y;
-
-                            if (x == 0 || y == 0)
+                            for (int y = -1; y <= 1; y++)
                             {
-                                FindNearlyNodeToOpenList(checkX, checkY, 1, startNodeIndex, endNode);
-                            }
-                            else
-                            {
-                                FindNearlyNodeToOpenList(checkX, checkY, 1.4f, startNodeIndex, endNode);
-                            }
+                                // 排除自身
+                                if (x + y * mapWidth == startNodeIndex) continue;
+                                AStarNode startNode = nodeArray[startNodeIndex];
+                                int checkX = startNode.x + x;
+                                int checkY = startNode.y + y;
 
+                                if (x == 0 || y == 0)
+                                {
+                                    FindNearlyNodeToOpenList(checkX, checkY, 1, startNodeIndex, endNode);
+                                }
+                                else
+                                {
+                                    FindNearlyNodeToOpenList(checkX, checkY, 1.4f, startNodeIndex, endNode);
+                                }
+
+                            }
                         }
-                    }
-                    //判断这些点 是否是边界 是否是阻挡 是否在开启或者关闭列表 如果都不是 才放入开启列表
+                        //判断这些点 是否是边界 是否是阻挡 是否在开启或者关闭列表 如果都不是 才放入开启列表
 
-                    //选出开启列表中 寻路消耗最小的点
-                    openList.Sort(new DescendingIntComparer
+                        //选出开启列表中 寻路消耗最小的点
+                        openList.Sort(new DescendingIntComparer
+                        {
+                            nodeArray = nodeArray
+                        });
+
+                        if (openList.Length == 0)
+                        {
+                            break;
+                        }
+                        //把寻路消耗最小的点放入关闭列表中 
+                        closeList.Add(openList[openList.Length - 1]);
+
+                        //找得这个点 又变成新的起点 进行下一次寻路计算了
+                        startNodeIndex = openList[openList.Length - 1];
+                        //然后再从开启列表中移除
+                        openList.RemoveAt(openList.Length - 1);
+
+
+                    } while (openList.Length > 0 && startNodeIndex != endNodeIndex);
+
+                    //如果这个点已经是终点了 那么得到最终结果返回出去
+                    //如果这个点 不是终点 那么继续寻路
+
+                    if (startNodeIndex == endNodeIndex)
                     {
-                        nodeArray = nodeArray
-                    });
-
-                    if (openList.Length == 0)
-                    {
-                        break;
-                    }
-                    //把寻路消耗最小的点放入关闭列表中 
-                    closeList.Add(openList[openList.Length - 1]);
-
-                    //找得这个点 又变成新的起点 进行下一次寻路计算了
-                    startNodeIndex = openList[openList.Length - 1];
-                    //然后再从开启列表中移除
-                    openList.RemoveAt(openList.Length - 1);
-
-
-                } while (openList.Length > 0 && startNodeIndex != endNodeIndex);
-
-                //如果这个点已经是终点了 那么得到最终结果返回出去
-                //如果这个点 不是终点 那么继续寻路
-
-                if (startNodeIndex == endNodeIndex)
-                {
-                    //找完了
-                    int index = endNodeIndex;
-                    pathList.Add(index);
-                    while (nodeArray[index].fatherIndex != -1)
-                    {
-                        index = nodeArray[index].fatherIndex;
+                        //找完了
+                        int index = endNodeIndex;
                         pathList.Add(index);
+                        while (nodeArray[index].fatherIndex != -1)
+                        {
+                            index = nodeArray[index].fatherIndex;
+                            pathList.Add(index);
+                        }
+
+                        //反转一下顺序
+                        //pathList.Reverse();
+                        //安全List没有反转API ，需要手动 或者不反转直接倒序使用优化性能
                     }
 
-                    //反转一下顺序
-                    //pathList.Reverse();
-                    //安全List没有反转API ，需要手动 或者不反转直接倒序使用优化性能
-                }
+                    //如果开启列表为空 说明没有找到路径
+                    //if (openList.Length == 0)
+                    //{
+                    //Debug.Log("没有找到路径");
+                    //}
 
-                //如果开启列表为空 说明没有找到路径
-                //if (openList.Length == 0)
-                //{
-                //Debug.Log("没有找到路径");
-                //}
+                }
             }
 
             [BurstCompile]
